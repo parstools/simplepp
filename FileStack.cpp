@@ -166,6 +166,7 @@ void Directive::parse(string line) {
         case DirectiveType::dtElse:
             if (wordList.size() != 1)
                 throw runtime_error("bad directive: " + line);
+            break;
         case DirectiveType::dtDefine:
             if (wordList.size() != 2 && wordList.size() != 3)
                 throw runtime_error("bad directive: " + line);
