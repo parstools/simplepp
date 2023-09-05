@@ -1,3 +1,4 @@
 #define var2 700
 #include "1.inc"
 #include "2.inc"
+after
