@@ -59,6 +59,7 @@ void FileStack::process(int h) {
                 break;
         }
     }
+    stack.pop_back();
 }
 
 void FileStack::preprocess(std::string filename) {
@@ -303,5 +304,3 @@ void Directive::parse(string line) {
 std::string Directive::unquote(std::string quoted) {
     return quoted.substr(1, quoted.length()-2);
 }
-
-
