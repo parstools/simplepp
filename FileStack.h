@@ -10,15 +10,25 @@
 #include <filesystem>
 #include <vector>
 
+enum class DirectiveType {dtNone, dtInclude, dtDefine, dtIfdef, dtIfndef, dtEndif,
+    dtElse, dtElif, dtIf};
+
+enum class RelOp {opEq, opNe, opGt, opGe, opLt, opLe};
+
+struct Directive {
+    DirectiveType dt = DirectiveType::dtNone;
+    std::string include;
+    RelOp relOp = RelOp::opEq;
+    std::string variable;
+    std::string variable2;
+};
+
 class File {
     static std::string trimLeft(const std::string& str);
     static std::string trimRight(const std::string& str);
     static std::string trim(const std::string& str);
 public:
-    enum DirectiveType {dtNone, dtInclude, dtDefine, dtIfdef, dtIfndef, dtEndif,
-        dtElse, dtIf};
-    bool isDirective();
-    DirectiveType directiveType();
+    Directive directive();
     std::string currLine();
     std::filesystem::path canonicalPath;
     std::vector<std::string> lines;

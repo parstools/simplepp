@@ -10,12 +10,14 @@ void FileStack::preprocess(std::string filename) {
     stack[0].read(std::move(filename));
     while(stack.size()>0) {
         auto & top = stack.back();
-        if (top.isDirective()) {
-            auto dt = top.directiveType();
+        auto directive = top.directive();
+        if (directive.dt != DirectiveType::dtNone) {
+            auto dt = directive.dt;
             switch(dt) {
-                case File::dtInclude:
+                case DirectiveType::dtInclude:
+                    std::filesystem::path path = top.canonicalPath.parent_path() / directive.include;
                     stack.emplace_back();
-                    //stack.back().read(top.askInclude());
+                    stack.back().read(path);
                     break;
                }
         }
@@ -32,30 +34,35 @@ std::string File::currLine() {
     return lines[currentLine];
 }
 
-bool File::isDirective() {
+Directive File::directive() {
     std::string line = currLine();
     line = trimLeft(line);
-    return !line.empty() and line[0] == '#';
-}
-
-File::DirectiveType File::directiveType() {
-    std::string line = currLine();
-    line = trimLeft(line);
+    Directive result;
     if (line.empty() || line[0] != '#')
-        return dtNone;
+        return result;
     size_t pos = 1;
     while (isalnum(line[pos])) pos++;
     string word = line.substr(1,pos-1);
-    if (word=="include") return dtInclude;
-    else if (word=="define") return dtDefine;
-    else if (word=="ifdef") return dtIfdef;
-    else if (word=="ifndef") return dtIfndef;
-    else if (word=="endif") return dtEndif;
-    else if (word=="else") return dtElse;
-    else if (word=="if") return dtIf;
+    if (word == "include") {
+        result.dt = DirectiveType::dtInclude;
+        pos = line.find('\"');
+        if (pos == line.npos)
+            throw runtime_error("no open quote include: " + line);
+        int pos2 = line.find('\"', pos + 1);
+        if (pos2 == line.npos)
+            throw runtime_error("no close quote include: " + line);
+        result.include = line.substr(pos+1, pos2 - pos-1);
+    } else if (word == "define") result.dt = DirectiveType::dtDefine;
+    else if (word == "ifdef") result.dt = DirectiveType::dtIfdef;
+    else if (word == "ifndef") result.dt = DirectiveType::dtIfndef;
+    else if (word == "endif") result.dt = DirectiveType::dtEndif;
+    else if (word == "else") result.dt = DirectiveType::dtElse;
+    else if (word == "elif") result.dt = DirectiveType::dtElif;
+    else if (word == "if") result.dt = DirectiveType::dtIf;
     else {
         throw runtime_error("bad directive: "+line);
     }
+    return result;
 }
 
 string File::trimLeft(const string& str)
@@ -89,4 +96,5 @@ void File::read(std::string filename) {
 bool File::eof() {
     return currentLine>=lines.size();
 }
+
 
