@@ -14,7 +14,7 @@ void FileStack::preprocess(std::string filename) {
             auto dt = top.directiveType();
             switch(dt) {
                 case File::dtInclude:
-                    //stack.emplace_back();
+                    stack.emplace_back();
                     //stack.back().read(top.askInclude());
                     break;
                }
@@ -22,7 +22,7 @@ void FileStack::preprocess(std::string filename) {
         else
            cout << top.currLine() << endl;
         top.currentLine++;
-        if (top.eof())
+        if (stack.back().eof())
             stack.pop_back();
     }
 }
