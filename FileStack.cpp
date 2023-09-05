@@ -41,33 +41,8 @@ std::string File::currLine() {
 
 Directive File::directive() {
     std::string line = currLine();
-    line = trimLeft(line);
     Directive result;
-    if (line.empty() || line[0] != '#')
-        return result;
-    size_t pos = 1;
-    while (isalnum(line[pos])) pos++;
-    string word = line.substr(1,pos-1);
-    if (word == "include") {
-        result.dt = DirectiveType::dtInclude;
-        pos = line.find('\"');
-        if (pos == line.npos)
-            throw runtime_error("no open quote include: " + line);
-        int pos2 = line.find('\"', pos + 1);
-        if (pos2 == line.npos)
-            throw runtime_error("no close quote include: " + line);
-        result.include = line.substr(pos+1, pos2 - pos-1);
-    } else if (word == "define") result.dt = DirectiveType::dtDefine;
-    else if (word == "undef") result.dt = DirectiveType::dtUndef;
-    else if (word == "ifdef") result.dt = DirectiveType::dtIfdef;
-    else if (word == "ifndef") result.dt = DirectiveType::dtIfndef;
-    else if (word == "endif") result.dt = DirectiveType::dtEndif;
-    else if (word == "else") result.dt = DirectiveType::dtElse;
-    else if (word == "elif") result.dt = DirectiveType::dtElif;
-    else if (word == "if") result.dt = DirectiveType::dtIf;
-    else {
-        throw runtime_error("bad directive: "+line);
-    }
+    result.parse(line);
     return result;
 }
 
