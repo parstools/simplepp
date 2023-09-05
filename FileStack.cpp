@@ -5,28 +5,28 @@
 
 using namespace std;
 
-void FileStack::preprocess(std::string filename) {
-    stack.emplace_back();
-    stack[0].read(std::move(filename));
-    while(stack.size()>0) {
-        auto & top = stack.back();
-        auto directive = top.directive();
+void FileStack::process(int h) {
+    for (int i=0; i<stack[h].lines.size(); i++) {
+        stack[h].currentLine = i;
+        auto directive = stack[h].directive();
         if (directive.dt != DirectiveType::dtNone) {
             auto dt = directive.dt;
             switch(dt) {
                 case DirectiveType::dtInclude:
-                    std::filesystem::path path = top.canonicalPath.parent_path() / directive.include;
+                    std::filesystem::path path = stack[h].canonicalPath.parent_path() / directive.include;
                     stack.emplace_back();
                     stack.back().read(path);
-                    break;
-               }
-        }
-        else
-           cout << top.currLine() << endl;
-        top.currentLine++;
-        if (stack.back().eof())
-            stack.pop_back();
+                    process(h+1);
+            }
+        } else
+            cout << stack[h].currLine() << endl;
     }
+}
+
+void FileStack::preprocess(std::string filename) {
+    stack.emplace_back();
+    stack[0].read(std::move(filename));
+    process(0);
 }
 
 
@@ -91,10 +91,6 @@ void File::read(std::string filename) {
     lines.clear();
     for( std::string line; getline( infile, line ); )
         lines.push_back(trimRight(line));
-}
-
-bool File::eof() {
-    return currentLine>=lines.size();
 }
 
 

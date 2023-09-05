@@ -34,12 +34,12 @@ public:
     std::vector<std::string> lines;
     int currentLine = 0;
     void read(std::string filename);
-    bool eof();
 };
 
 class FileStack {
     std::unordered_map<std::string,std::string> variables;
     std::vector<File> stack;
+    void process(int h);
 public:
     void preprocess(std::string filename);
 };
