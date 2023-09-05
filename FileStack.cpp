@@ -9,22 +9,55 @@ void FileStack::process(int h) {
     for (int i=0; i<stack[h].lines.size(); i++) {
         stack[h].currentLine = i;
         auto directive = stack[h].directive();
-        if (directive.dt != DirectiveType::dtNone) {
-            auto dt = directive.dt;
-            switch(dt) {
-                case DirectiveType::dtInclude:
-                    std::filesystem::path path = stack[h].canonicalPath.parent_path() / directive.include;
-                    path = std::filesystem::canonical(path);
-                    for (int j=0; j<=h; j++) {
-                        if (stack[j].canonicalPath == path)
-                            throw runtime_error("include recursive "+ path.string());
-                    }
+        auto dt = directive.dt;
+        switch (dt) {
+            case DirectiveType::dtInclude: {
+                std::filesystem::path path = stack[h].canonicalPath.parent_path() / directive.include;
+                path = std::filesystem::canonical(path);
+                for (int j = 0; j <= h; j++) {
+                    if (stack[j].canonicalPath == path)
+                        throw runtime_error("include recursive " + path.string());
+                }
+                if (regionVisible()) {
                     stack.emplace_back();
                     stack.back().read(path);
-                    process(h+1);
+                    process(h + 1);
+                }
             }
-        } else
-            cout << stack[h].currLine() << endl;
+                break;
+            case DirectiveType::dtDefine:
+                if (regionVisible())
+                    variables[directive.variable] = directive.variable2;
+                break;
+            case DirectiveType::dtUndef:
+                if (regionVisible())
+                    variables.erase(directive.variable);
+                break;
+            case DirectiveType::dtIfdef:
+                stackRegions.push_back(variables.find(directive.variable) != variables.end());
+                break;
+            case DirectiveType::dtIfndef:
+                stackRegions.push_back(variables.find(directive.variable) == variables.end());
+                break;
+            case DirectiveType::dtElse:
+                stackRegions.back() = !stackRegions.back();
+                break;
+            case DirectiveType::dtEndif:
+                if (stackRegions.empty())
+                    throw runtime_error("too much #endif");
+                stackRegions.pop_back();
+                break;
+            case DirectiveType::dtIf:
+                stackRegions.push_back(condition(directive));
+                break;
+            case DirectiveType::dtElif:
+                stackRegions.back() = condition(directive);
+                break;
+            case DirectiveType::dtNone:
+                if (regionVisible())
+                    cout << stack[h].currLine() << endl;
+                break;
+        }
     }
 }
 
@@ -32,6 +65,38 @@ void FileStack::preprocess(std::string filename) {
     stack.emplace_back();
     stack[0].read(std::move(filename));
     process(0);
+}
+
+bool FileStack::regionVisible() {
+    for (bool b: stackRegions)
+        if (!b)
+            return false;
+    return true;
+}
+
+bool FileStack::condition(Directive &directive) {
+    if (variables.find(directive.variable) == variables.end())
+        throw runtime_error("variable " + directive.variable + " undefined");
+    int n1,n2;
+    string value = variables[directive.variable];
+    if (value.empty())
+        n1 = -1;
+    else
+        n1 = stoi(value);
+
+    if (directive.var2Type == WordType::wtEmpty)
+        n2 = -1;
+    else
+        n2 = stoi(directive.variable2);
+    switch(directive.relOp) {
+        case RelOp::opEq: return n1 == n2;
+        case RelOp::opNe: return n1 != n2;
+        case RelOp::opGt: return n1 > n2;
+        case RelOp::opGe: return n1 >= n2;
+        case RelOp::opLt: return n1 < n2;
+        case RelOp::opLe: return n1 <= n2;
+    }
+    return false;
 }
 
 

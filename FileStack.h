@@ -31,8 +31,8 @@ struct Directive {
     RelOp relOp = RelOp::opEq;
     std::string variable;
     std::string variable2;
-    WordType varType;
-    WordType var2Type;
+    WordType varType = WordType::wtEmpty;
+    WordType var2Type  = WordType::wtEmpty;
     static size_t skipBlank(std::string line, size_t start);
     static size_t nextIdent(std::string line, size_t start);
     static size_t nextNumber(std::string line, size_t start);
@@ -57,8 +57,11 @@ class FileStack {
     std::unordered_map<std::string,std::string> variables;
     std::vector<File> stack;
     void process(int h);
+    std::vector<bool> stackRegions;
+    bool regionVisible();
 public:
     void preprocess(std::string filename);
+    bool condition(Directive &directive);
 };
 
 
