@@ -6,8 +6,12 @@
 
 using namespace std;
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc<2) {
+        cout << "give main file as parameter" << endl;
+        return 0;
+    }
     FileStack fis;
-    fis.preprocess("../testsuite/a.txt");
+    fis.preprocess(argv[1]);
     return 0;
 }
