@@ -14,6 +14,11 @@ void FileStack::process(int h) {
             switch(dt) {
                 case DirectiveType::dtInclude:
                     std::filesystem::path path = stack[h].canonicalPath.parent_path() / directive.include;
+                    path = std::filesystem::canonical(path);
+                    for (int j=0; j<=h; j++) {
+                        if (stack[j].canonicalPath == path)
+                            throw runtime_error("include recursive "+ path.string());
+                    }
                     stack.emplace_back();
                     stack.back().read(path);
                     process(h+1);
