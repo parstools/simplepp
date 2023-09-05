@@ -22,7 +22,7 @@ enum class RelOp {
     opEq, opNe, opGt, opGe, opLt, opLe
 };
 enum class WordType {
-    wtIdent, wtQuote, wtOperator
+    wtIdent, wtNumber, wtQuote, wtOther
 };
 
 struct Directive {
@@ -31,8 +31,17 @@ struct Directive {
     RelOp relOp = RelOp::opEq;
     std::string variable;
     std::string variable2;
-    std::vector<std::pair<std::string, WordType>> parseRaw(std::string line);
-    void parse();
+    WordType varType;
+    WordType var2Type;
+    static size_t skipBlank(std::string line, size_t start);
+    static size_t nextIdent(std::string line, size_t start);
+    static size_t nextNumber(std::string line, size_t start);
+    static size_t nextQuote(std::string line, size_t start);
+    static size_t nextOther(std::string line, size_t start);
+    static size_t nextWord(std::string line, size_t start);
+    static std::vector<std::pair<std::string, WordType>> parseRaw(std::string line);
+    static std::string unquote(std::string quoted);
+    void parse(std::string line);
 };
 
 struct File {

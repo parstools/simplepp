@@ -100,10 +100,151 @@ void File::read(std::string filename) {
 }
 
 
+size_t Directive::skipBlank(std::string line, size_t start) {
+    while (iswblank(line[start])) start++;
+    return start;
+}
+
+size_t Directive::nextIdent(std::string line, size_t start) {
+    while (isalnum(line[start])) start++;
+    return start;
+}
+
+size_t Directive::nextNumber(std::string line, size_t start) {
+    while (isdigit(line[start])) start++;
+    return start;
+}
+
+size_t Directive::nextQuote(std::string line, size_t start) {
+    while (line[start] != '\"') start++;
+    return start + 1;
+}
+
+size_t Directive::nextOther(std::string line, size_t start) {
+    while (!isalnum(line[start]) && !iswblank(line[start]) && line[start] != '\"') start++;
+    return start;
+}
+
+size_t Directive::nextWord(std::string line, size_t start) {
+    if (isalpha(line[start]))
+        return nextIdent(line, start + 1);
+    else if (isdigit(line[start]))
+        return nextNumber(line, start + 1);
+    else if (line[start] == '"')
+        return nextQuote(line, start + 1);
+    else
+        return nextOther(line, start + 1);
+}
+
 vector<pair<string, WordType>> Directive::parseRaw(string line) {
     vector<pair<string, WordType>> result;
     line = trimLeft(line);
     if (line.empty() || line[0] != '#')
         return result;
+    size_t pos = 1;
+    pos = skipBlank(line, pos);
+    while (pos < line.size()) {
+        size_t pos0 = pos;
+        pos = nextWord(line, pos);
+        string word = line.substr(pos0, pos - pos0);
+        WordType wt;
+        if (isalpha(word[0]))
+            wt = WordType::wtIdent;
+        else if (isdigit(word[0]))
+            wt = WordType::wtNumber;
+        else if (word[0] == '\"')
+            wt = WordType::wtQuote;
+        else
+            wt = WordType::wtOther;
+        pos = skipBlank(line, pos);
+        result.emplace_back(word, wt);
+    }
     return result;
 }
+
+
+
+void Directive::parse(string line) {
+    auto wordList = parseRaw(line);
+    if (wordList.empty()) {
+        dt = DirectiveType::dtNone;
+        return;
+    }
+    if (wordList[0].second != WordType::wtIdent)
+        throw runtime_error("bad directive " + line);
+    string word = wordList[0].first;
+    if (word == "include")
+        dt = DirectiveType::dtInclude;
+    else if (word == "define") dt = DirectiveType::dtDefine;
+    else if (word == "undef") dt = DirectiveType::dtUndef;
+    else if (word == "ifdef") dt = DirectiveType::dtIfdef;
+    else if (word == "ifndef") dt = DirectiveType::dtIfndef;
+    else if (word == "endif") dt = DirectiveType::dtEndif;
+    else if (word == "else") dt = DirectiveType::dtElse;
+    else if (word == "elif") dt = DirectiveType::dtElif;
+    else if (word == "if") dt = DirectiveType::dtIf;
+    else {
+        throw runtime_error("bad directive: " + line);
+    }
+    switch (dt) {
+        case DirectiveType::dtEndif:
+        case DirectiveType::dtElse:
+            if (wordList.size() != 1)
+                throw runtime_error("bad directive: " + line);
+        case DirectiveType::dtDefine:
+        case DirectiveType::dtUndef:
+        case DirectiveType::dtIfdef:
+        case DirectiveType::dtIfndef:
+            if (wordList.size() != 2)
+                throw runtime_error("bad directive: " + line);
+            if (wordList[1].second != WordType::wtIdent)
+                throw runtime_error("bad directive: " + line);
+            variable = wordList[1].first;
+            break;
+        case DirectiveType::dtInclude:
+            if (wordList.size() != 2)
+                throw runtime_error("bad directive: " + line);
+            if (wordList[1].second != WordType::wtQuote)
+                throw runtime_error("bad directive: " + line);
+            include = unquote(wordList[1].first);
+            break;
+        case DirectiveType::dtIf:
+        case DirectiveType::dtElif:
+            if (wordList.size() != 4)
+                throw runtime_error("bad directive: " + line);
+            if (wordList[1].second == WordType::wtOther)
+                throw runtime_error("bad directive: " + line);
+            variable = wordList[1].first;
+            varType = wordList[1].second;
+
+            if (wordList[2].second != WordType::wtOther)
+                throw runtime_error("bad directive: " + line);
+            string op = wordList[2].first;
+            if (op=="==")
+                relOp = RelOp::opEq;
+            else if (op=="!=")
+                relOp = RelOp::opNe;
+            else if (op==">")
+                relOp = RelOp::opGt;
+            else if (op==">=")
+                relOp = RelOp::opGe;
+            else if (op=="<")
+                relOp = RelOp::opLt;
+            else if (op=="<=")
+                relOp = RelOp::opLe;
+            else
+                throw runtime_error("bad directive: " + line);
+
+            if (wordList[3].second == WordType::wtOther)
+                throw runtime_error("bad directive: " + line);
+            variable2 = wordList[3].first;
+            var2Type = wordList[3].second;
+            break;
+    }
+}
+
+std::string Directive::unquote(std::string quoted) {
+    return quoted.substr(1, quoted.length()-2);
+}
+
+
