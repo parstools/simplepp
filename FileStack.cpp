@@ -58,6 +58,7 @@ Directive File::directive() {
             throw runtime_error("no close quote include: " + line);
         result.include = line.substr(pos+1, pos2 - pos-1);
     } else if (word == "define") result.dt = DirectiveType::dtDefine;
+    else if (word == "undef") result.dt = DirectiveType::dtUndef;
     else if (word == "ifdef") result.dt = DirectiveType::dtIfdef;
     else if (word == "ifndef") result.dt = DirectiveType::dtIfndef;
     else if (word == "endif") result.dt = DirectiveType::dtEndif;
@@ -70,7 +71,7 @@ Directive File::directive() {
     return result;
 }
 
-string File::trimLeft(const string& str)
+string trimLeft(const string& str)
 {
     const auto strBegin = str.find_first_not_of(" \t");
     if (strBegin == string::npos)
@@ -78,7 +79,7 @@ string File::trimLeft(const string& str)
     return str.substr(strBegin, str.length() - strBegin);
 }
 
-string File::trimRight(const string& str)
+string trimRight(const string& str)
 {
     const auto strEnd = str.find_last_not_of(" \t\r");
     if (strEnd == string::npos)
@@ -86,7 +87,7 @@ string File::trimRight(const string& str)
     return str.substr(0, strEnd + 1);
 }
 
-string File::trim(const string& str) {
+string trim(const string& str) {
     return trimLeft(trimRight(str));
 }
 
@@ -99,3 +100,10 @@ void File::read(std::string filename) {
 }
 
 
+vector<pair<string, WordType>> Directive::parseRaw(string line) {
+    vector<pair<string, WordType>> result;
+    line = trimLeft(line);
+    if (line.empty() || line[0] != '#')
+        return result;
+    return result;
+}

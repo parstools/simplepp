@@ -10,10 +10,20 @@
 #include <filesystem>
 #include <vector>
 
-enum class DirectiveType {dtNone, dtInclude, dtDefine, dtIfdef, dtIfndef, dtEndif,
+std::string trimLeft(const std::string& str);
+std::string trimRight(const std::string& str);
+std::string trim(const std::string& str);
+
+enum class DirectiveType {
+    dtNone, dtInclude, dtDefine, dtUndef, dtIfdef, dtIfndef, dtEndif,
     dtElse, dtElif, dtIf};
 
-enum class RelOp {opEq, opNe, opGt, opGe, opLt, opLe};
+enum class RelOp {
+    opEq, opNe, opGt, opGe, opLt, opLe
+};
+enum class WordType {
+    wtIdent, wtQuote, wtOperator
+};
 
 struct Directive {
     DirectiveType dt = DirectiveType::dtNone;
@@ -21,13 +31,11 @@ struct Directive {
     RelOp relOp = RelOp::opEq;
     std::string variable;
     std::string variable2;
+    std::vector<std::pair<std::string, WordType>> parseRaw(std::string line);
+    void parse();
 };
 
-class File {
-    static std::string trimLeft(const std::string& str);
-    static std::string trimRight(const std::string& str);
-    static std::string trim(const std::string& str);
-public:
+struct File {
     Directive directive();
     std::string currLine();
     std::filesystem::path canonicalPath;
