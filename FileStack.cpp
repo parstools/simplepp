@@ -167,6 +167,22 @@ void Directive::parse(string line) {
             if (wordList.size() != 1)
                 throw runtime_error("bad directive: " + line);
         case DirectiveType::dtDefine:
+            if (wordList.size() != 2 && wordList.size() != 3)
+                throw runtime_error("bad directive: " + line);
+            if (wordList[1].second != WordType::wtIdent)
+                throw runtime_error("bad directive: " + line);
+            variable = wordList[1].first;
+            varType = WordType::wtIdent;
+            if (wordList.size() == 2) {
+                variable2 = "";
+                var2Type = WordType::wtEmpty;
+            } else {
+                if (wordList[2].second != WordType::wtNumber)
+                    throw runtime_error("in this version preprocessor variables can be only numbers without sign or empty: " + line);
+                variable2 = wordList[2].first;
+                var2Type = WordType::wtNumber;
+            }
+            break;
         case DirectiveType::dtUndef:
         case DirectiveType::dtIfdef:
         case DirectiveType::dtIfndef:

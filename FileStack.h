@@ -22,7 +22,7 @@ enum class RelOp {
     opEq, opNe, opGt, opGe, opLt, opLe
 };
 enum class WordType {
-    wtIdent, wtNumber, wtQuote, wtOther
+    wtEmpty, wtIdent, wtNumber, wtQuote, wtOther
 };
 
 struct Directive {
